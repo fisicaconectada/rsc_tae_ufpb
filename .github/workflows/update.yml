@@ -1,0 +1,38 @@
+name: Atualizar Monitor RSC-TAE
+
+on:
+  schedule:
+    # Roda a cada hora, das 10h às 23h UTC (= 7h às 20h em Brasília),
+    # apenas de segunda (1) a sexta (5).
+    - cron: "12 10-23 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rsc-tae-monitor
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Coletar dados e regerar painel
+        run: python3 update_rsc_data.py
+
+      - name: Publicar mudanças
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html docs/rsc_history.csv
+          git diff --staged --quiet && echo "Sem mudanças, nada a publicar." || git commit -m "Atualização automática RSC-TAE $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
