@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitor RSC-TAE UFPB</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f6f9;
+    --card-bg: #ffffff;
+    --text: #1a1f29;
+    --muted: #5b6472;
+    --border: #e2e6ec;
+    --accent: #1e5fbf;
+    --accent-2: #2f9e6b;
+    --shadow: 0 1px 3px rgba(20,25,35,0.08), 0 1px 2px rgba(20,25,35,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b;
+      --card-bg: #1b1f28;
+      --text: #eef1f6;
+      --muted: #9aa4b2;
+      --border: #2a2f3a;
+      --accent: #6ea8ff;
+      --accent-2: #4fd497;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151b; --card-bg: #1b1f28; --text: #eef1f6; --muted: #9aa4b2;
+    --border: #2a2f3a; --accent: #6ea8ff; --accent-2: #4fd497;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f9; --card-bg: #ffffff; --text: #1a1f29; --muted: #5b6472;
+    --border: #e2e6ec; --accent: #1e5fbf; --accent-2: #2f9e6b;
+    --shadow: 0 1px 3px rgba(20,25,35,0.08), 0 1px 2px rgba(20,25,35,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+  }
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+  }
+  header {
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: 1.35rem;
+    margin: 0 0 4px;
+    line-height: 1.3;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0 0 2px;
+  }
+  .timestamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    box-shadow: var(--shadow);
+  }
+  .timestamp b { color: var(--accent); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 20px 0 28px;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-left: 4px solid var(--accent);
+  }
+  .card-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .card-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .card-total { border-left-color: var(--accent); grid-column: span 1; }
+  .card-homologado { border-left-color: var(--accent-2); }
+  .card-homologado .card-value { color: var(--accent-2); }
+  .card-indeferido { border-left-color: #d3564a; }
+  .card-indeferido .card-value { color: #d3564a; }
+  section.panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  section.panel h2 {
+    font-size: 1rem;
+    margin: 0 0 12px;
+  }
+  #chart-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+  svg#chart {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .axis-label { fill: var(--muted); font-size: 10px; }
+  .grid-line { stroke: var(--border); stroke-width: 1; }
+  .chart-line { fill: none; stroke: var(--accent-2); stroke-width: 2.5; }
+  .chart-area { fill: var(--accent-2); opacity: 0.12; }
+  .chart-dot { fill: var(--accent-2); }
+  .chart-empty { fill: var(--muted); font-size: 13px; }
+  footer {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: center;
+    margin-top: 24px;
+  }
+  footer a { color: var(--accent); }
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+  .notice {
+    text-align: left;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .notice p {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .notice p strong {
+    color: var(--text);
+  }
+  .notice a { color: var(--accent); }
+  details.raw-data {
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  details.raw-data summary {
+    cursor: pointer;
+    user-select: none;
+  }
+  details.raw-data pre {
+    margin: 8px 0 0;
+    padding: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  @media (max-width: 480px) {
+    h1 { font-size: 1.15rem; }
+    .card-value { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Monitor de Solicitações RSC — UFPB</h1>
+    <p class="subtitle">Acompanhamento horário do andamento das solicitações de RSC/TAE em tramitação, com base na consulta pública oficial.</p>
+    <div class="timestamp">📅 Atualizado em <b>06/08/2026</b> às <b>09:49</b> (horário de Brasília)</div>
+  </header>
+
+  <div class="grid">
+      <div class="card card-total">
+        <span class="card-label">Total de solicitações</span>
+        <span class="card-value">436</span>
+      </div>
+      <div class="card card-aguardando">
+        <span class="card-label">Aguardando relator</span>
+        <span class="card-value">357</span>
+      </div>
+      <div class="card card-relator">
+        <span class="card-label">Com relator designado</span>
+        <span class="card-value">79</span>
+      </div>
+      <div class="card card-memorial">
+        <span class="card-label">Análise do memorial</span>
+        <span class="card-value">4</span>
+      </div>
+      <div class="card card-criterios">
+        <span class="card-label">Análise de critérios</span>
+        <span class="card-value">15</span>
+      </div>
+      <div class="card card-votacao">
+        <span class="card-label">Em votação</span>
+        <span class="card-value">54</span>
+      </div>
+      <div class="card card-homolog-aguard">
+        <span class="card-label">Aguardando homologação</span>
+        <span class="card-value">6</span>
+      </div>
+      <div class="card card-indeferido">
+        <span class="card-label">Indeferidas</span>
+        <span class="card-value">0</span>
+      </div>
+      <div class="card card-homologado">
+        <span class="card-label">Homologadas</span>
+        <span class="card-value">0</span>
+      </div>
+  </div>
+
+  <section class="panel">
+    <h2>Solicitações homologadas ao longo do tempo <span class="badge">1 registro(s)</span></h2>
+    <div id="chart-wrap">
+      <svg id="chart" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </section>
+
+  <footer>
+    <div class="notice">
+      <p>🕐 <strong>Janela de atualização:</strong> os dados são coletados automaticamente de hora em hora, apenas de segunda a sexta-feira, das 7h às 20h (horário de Brasília). Fora desse intervalo e aos finais de semana, este painel permanece parado, exibindo os números da última coleta.</p>
+      <p>⚠️ <strong>Aviso:</strong> este é um painel de acompanhamento independente e não oficial, sem qualquer responsabilidade sobre a exatidão ou atualidade dos dados aqui exibidos. A fonte oficial e sempre atual é a Consulta Pública do RSC-TAE/UFPB, disponível em <a href="https://rsctae.ufpb.br/portal" target="_blank" rel="noopener">rsctae.ufpb.br/portal</a> — em caso de dúvida ou divergência, ela prevalece.</p>
+    </div>
+    <details class="raw-data">
+      <summary>Dados históricos (JSON, uso interno da coleta automática)</summary>
+      <pre id="rsc-raw-data">{"generated_at": "2026-08-06T09:49:19-03:00", "history": [{"t": "2026-08-06T09:49:19-03:00", "total": 436, "aguardando_relator": 357, "relator_designado": 79, "analise_memorial": 4, "analise_criterios": 15, "em_votacao": 54, "aguardando_homologacao": 6, "indeferido": 0, "homologado": 0}]}</pre>
+    </details>
+  </footer>
+</div>
+
+<script>
+  var payload = JSON.parse(document.getElementById('rsc-raw-data').textContent);
+  var historyData = payload.history || [];
+  var chartData = historyData.map(function(d) { return {t: d.t, v: d.homologado}; });
+
+  function renderChart() {
+    var svg = document.getElementById('chart');
+    var W = 800, H = 300;
+    var padL = 40, padR = 16, padT = 16, padB = 34;
+    svg.innerHTML = '';
+
+    if (!chartData || chartData.length === 0) {
+      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', W/2); t.setAttribute('y', H/2);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('class', 'chart-empty');
+      t.textContent = 'Ainda não há histórico suficiente. Volte em algumas horas.';
+      svg.appendChild(t);
+      return;
+    }
+
+    var values = chartData.map(function(d){ return d.v; });
+    var maxV = Math.max.apply(null, values);
+    var minV = 0;
+    var range = Math.max(maxV - minV, 1);
+    var n = chartData.length;
+
+    var plotW = W - padL - padR;
+    var plotH = H - padT - padB;
+
+    function x(i) { return n === 1 ? padL + plotW/2 : padL + (plotW * i) / (n - 1); }
+    function y(v) { return padT + plotH - ((v - minV) / range) * plotH; }
+
+    var ns = 'http://www.w3.org/2000/svg';
+
+    var gridCount = 4;
+    for (var g = 0; g <= gridCount; g++) {
+      var gv = Math.round((range * g) / gridCount);
+      var gy = y(gv);
+      var line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+      line.setAttribute('y1', gy); line.setAttribute('y2', gy);
+      line.setAttribute('class', 'grid-line');
+      svg.appendChild(line);
+
+      var label = document.createElementNS(ns, 'text');
+      label.setAttribute('x', padL - 8); label.setAttribute('y', gy + 3);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('class', 'axis-label');
+      label.textContent = gv;
+      svg.appendChild(label);
+    }
+
+    var pathD = '';
+    var areaD = '';
+    chartData.forEach(function(d, i) {
+      var px = x(i), py = y(d.v);
+      pathD += (i === 0 ? 'M' : 'L') + px + ',' + py + ' ';
+    });
+    areaD = pathD + 'L' + x(n-1) + ',' + y(minV) + ' L' + x(0) + ',' + y(minV) + ' Z';
+
+    var area = document.createElementNS(ns, 'path');
+    area.setAttribute('d', areaD);
+    area.setAttribute('class', 'chart-area');
+    svg.appendChild(area);
+
+    var path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', pathD.trim());
+    path.setAttribute('class', 'chart-line');
+    svg.appendChild(path);
+
+    var labelEvery = Math.max(1, Math.ceil(n / 6));
+    chartData.forEach(function(d, i) {
+      var px = x(i), py = y(d.v);
+      var dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', px); dot.setAttribute('cy', py);
+      dot.setAttribute('r', 3);
+      dot.setAttribute('class', 'chart-dot');
+      var titleEl = document.createElementNS(ns, 'title');
+      var dt = new Date(d.t);
+      titleEl.textContent = dt.toLocaleString('pt-BR') + ' — ' + d.v + ' homologada(s)';
+      dot.appendChild(titleEl);
+      svg.appendChild(dot);
+
+      if (i % labelEvery === 0 || i === n - 1) {
+        var lbl = document.createElementNS(ns, 'text');
+        lbl.setAttribute('x', px); lbl.setAttribute('y', H - padB + 16);
+        lbl.setAttribute('text-anchor', 'middle');
+        lbl.setAttribute('class', 'axis-label');
+        var dt2 = new Date(d.t);
+        lbl.textContent = dt2.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + dt2.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+        svg.appendChild(lbl);
+      }
+    });
+  }
+
+  renderChart();
+  window.addEventListener('resize', renderChart);
+</script>
+</body>
+</html>
